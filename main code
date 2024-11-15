@@ -1,233 +1,138 @@
 main code 
-/*
-file: main.cpp
-*/
-
 #include <iostream>
-#include "main.h"
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
-#include <fstream>
+#include <string>
+#include <unordered_map>
+#include <list>
+#include <queue>
 
 using namespace std;
 
-/* run this program using the console pauser or add your own getch, 
-   system("pause") or input loop */
+// Structure for Book
+struct Book {
+    string id;
+    string title;
+    string author;
 
-int main(int argc, char** argv) {
-	
-int outerChoice = 0;
-while(outerChoice!=9){
-	system("cls");
-	cout<<"\n Library Management Version 1.0 \n\n";
-	cout<<"\n1. Amin";
-	cout<<"\n2. User";
-	cout<<"\n9. Exit";
-	cout<<"\n\nEnter your choice : ";
-	cin>>outerChoice;
-	
-	if( outerChoice == 1 )
-	{
-	char adminUser[10];
-	char adminPassword[10];
-	
-	system("cls");
-	cout<<"\n ---------- Admin Login -------";
-	cout<<"\n\n Enter username: ";
-	cin>>adminUser;
-	cout<<"\n Enter password:";
-	cin>>adminPassword;
-	if( (strcmp(adminUser, ADMINUSER) == 0) && 
-	    ( strcmp(adminPassword, ADMINPASSWORD) == 0)){
-        
-	getchar(); getchar();
-	system("cls");
-	int innerChoice = 0;
-	while(innerChoice != 9){
-	cout<<"\n\n Admin Login is Successful !! Press any key to continue..";	
-	cout<<"\n1. Add Book";
-	cout<<"\n2. Update Book";
-	cout<<"\n3. Delete Book";
-	cout<<"\n4. List of All Books";
-	cout<<"\n9. Exit";
-	cout<<"\n\n Enter your choice : ";
-	cin>>innerChoice;
-        switch(innerChoice){
-    	case 1: addBook(); break;
-    	case 2: updateBook(); break;
-    	case 3: deleteBook(); break;
-    	case 4: listOfAllBooks(); break;
-    	default: cout<<"\n\n Invalid Choice. Press any key to continue..";
-    	         getchar();
-	}
-	system("cls");
+    Book(string bid, string btitle, string bauthor)
+        : id(bid), title(btitle), author(bauthor) {}
+};
+
+// Node for Binary Search Tree
+struct TreeNode {
+    Book book;
+    TreeNode* left;
+    TreeNode* right;
+
+    TreeNode(Book b) : book(b), left(nullptr), right(nullptr) {}
+};
+
+// Class for Library Management System
+class Library {
+private:
+    TreeNode* root; // Root for Binary Search Tree
+    unordered_map<string, list<string>> userTransactions; // User tracking
+    list<string> transactionHistory; // Global transaction log
+
+    // Insert a book in the BST
+    TreeNode* insert(TreeNode* node, Book book) {
+        if (!node) return new TreeNode(book);
+        if (book.title < node->book.title)
+            node->left = insert(node->left, book);
+        else
+            node->right = insert(node->right, book);
+        return node;
     }
-		       		
-	}
-	else
-	{
-	cout<<"\n\n Error : Invalid Credentials. Press any key to conitnue";
-	getchar();getchar();
-	}
-					
-	}
-	else if(outerChoice ==2) {			    
-		char studentUser[10];
-		char studentPassword[10];
-		    
-		system("cls");
-		cout<<"\n ---------- Student Login -------";
-		cout<<"\n\n Enter username: ";
-		cin>>studentUser;
-		cout<<"\n Enter password:";
-		cin>>studentPassword;
-		    
-		if( (strcmp(studentUser, USER) ==0)  && 
-		    (strcmp(studentPassword, USERPASSWORD) == 0)){
-		int innerChoice = 0;
-		while(innerChoice != 9){
-		system("cls");
-	     	cout<<"\n1. Borrow a Book";
-	     	cout<<"\n2. Return a Book";
-	     	cout<<"\n3. List of All Books";
-	     	cout<<"\n9. Exit";  
-		cout<<"\n\n Enter your choice : ";
-		cin>>innerChoice; 	
-		
-		switch(innerChoice){
-		case 1: borrowBook();break;
-		case 2: returnBook();break;
-		case 3: listOfAllBooks(); break;
-		case 9: break;
-		default: cout<<"\n\n Error: Invalid Choice. Press any key to continue..";
-		getchar();getchar();
-			
-		}
-				
-		}
-		system("cls");
-		}
-		else
-		{
-		cout<<"\n\n Error : Invalid Credentials. Press any key to conitnue";
-		getchar();getchar();
-			
-		}
-	}
-	else if(outerChoice!=9){
-		cout<<"\n\n Invalid choice. Press any key to continue..";
-		getchar();getchar();
-	}
-	else
-	{
-		cout<<"\n\n Thank you for using it !! Press any key to exit";
-		getchar();getchar();
-	}
+
+    // Search a book in the BST
+    TreeNode* search(TreeNode* node, string title) {
+        if (!node || node->book.title == title)
+            return node;
+        if (title < node->book.title)
+            return search(node->left, title);
+        return search(node->right, title);
+    }
+
+    // Inorder traversal for displaying books
+    void displayBooks(TreeNode* node) {
+        if (!node) return;
+        displayBooks(node->left);
+        cout << "ID: " << node->book.id
+             << ", Title: " << node->book.title
+             << ", Author: " << node->book.author << endl;
+        displayBooks(node->right);
+    }
+
+public:
+    Library() : root(nullptr) {}
+
+    // Add a book to the library
+    void addBook(string id, string title, string author) {
+        Book book(id, title, author);
+        root = insert(root, book);
+        cout << "Book \"" << title << "\" added successfully!" << endl;
+    }
+
+    // Search for a book
+    void searchBook(string title) {
+        TreeNode* result = search(root, title);
+        if (result) {
+            cout << "Book Found - ID: " << result->book.id
+                 << ", Title: " << result->book.title
+                 << ", Author: " << result->book.author << endl;
+        } else {
+            cout << "Book not found!" << endl;
+        }
+    }
+
+    // Track user transactions
+    void issueBook(string userId, string bookTitle) {
+        TreeNode* result = search(root, bookTitle);
+        if (result) {
+            userTransactions[userId].push_back(bookTitle);
+            transactionHistory.push_back("Issued: " + bookTitle + " to User " + userId);
+            cout << "Book \"" << bookTitle << "\" issued to User " << userId << "." << endl;
+        } else {
+            cout << "Book not available!" << endl;
+        }
+    }
+
+    // Return a book
+    void returnBook(string userId, string bookTitle) {
+        auto& userBooks = userTransactions[userId];
+        userBooks.remove(bookTitle);
+        transactionHistory.push_back("Returned: " + bookTitle + " by User " + userId);
+        cout << "Book \"" << bookTitle << "\" returned by User " << userId << "." << endl;
+    }
+
+    // Display all books
+    void displayAllBooks() {
+        cout << "\nAvailable Books:\n";
+        displayBooks(root);
+    }
+
+    // Display transaction history
+    void displayTransactionHistory() {
+        cout << "\nTransaction History:\n";
+        for (const auto& transaction : transactionHistory)
+            cout << transaction << endl;
+    }
+};
+
+int main() {
+    Library library;
+
+    library.addBook("B001", "The Great Gatsby", "F. Scott Fitzgerald");
+    library.addBook("B002", "1984", "George Orwell");
+    library.addBook("B003", "To Kill a Mockingbird", "Harper Lee");
+
+    library.displayAllBooks();
+
+    library.searchBook("1984");
+
+    library.issueBook("U101", "1984");
+    library.returnBook("U101", "1984");
+
+    library.displayTransactionHistory();
+
+    return 0;
 }
-
-return 0;
-}
-
-int addBook(){
-int bookid;
-char bookname[20];
-char bookauthor[20];
-int year, month, day;
-
-time_t t = time(NULL);
-struct tm tm = *localtime(&t);
-
-year = tm.tm_year + 1900;
-month = tm.tm_mon +1;
-day = tm.tm_mday;
-
-
-system("cls");
-cout<<"\n ---- Add a new Book ----";
-
-cout<<"\n\n Enter 4 digit numberic id :";
-cin>>bookid;
-cout<<"\n Enter book name : ";
-cin>>bookname;
-cout<<"\n Enter book author : ";
-cin>>bookauthor;
-
-char filename[20];
-
-sprintf(filename,"%d%s",bookid,".dat");
-
-ofstream file(filename);
-
-file<<bookname<<"\n";
-file<<bookauthor<<"\n";
-file<<year<<"\n";
-file<<month<<"\n";
-file<<day<<"\n";
-
-file.close();
-
-cout<<"\n File Saved Successfully !!";
-getchar(); getchar();	
-}
-
-int deleteBook(){
-	
-	
-}
-
-int updateBook(){
-	
-	
-}
-
-int listOfAllBooks(){
-	
-	
-}
-
-int borrowBook(){
-	
-	
-}
-
-int returnBook(){
-	
-}
-int adminLogin(){
-	
-	
-}
-
-int userLogin(){
-
-}
-
-/*---------------  End of Main.cpp -----------*/
-
-/* ---------------- main.h ----------------- */
-#define ADMINUSER "admin"
-#define ADMINPASSWORD "admin123"
-
-#define USER "user"
-#define USERPASSWORD "user123"
-
-#define FINE 500
-
-int addBook();
-
-int deleteBook();
-
-int updateBook();
-
-int listOfAllBooks();
-
-int borrowBook();
-
-int returnBook();
-
-int adminLogin();
-
-int userLogin();
-
-/* - -------------------- end of main.h -----------------*/
